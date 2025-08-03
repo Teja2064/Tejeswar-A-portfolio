@@ -1,10 +1,23 @@
 "use client";
-import React from "react";
+import React, { Suspense } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
+import { ErrorBoundary } from "react-error-boundary";
 
-const World = dynamic(() => import("./Globe").then((m) => m.World), {
+const World = dynamic(
+  () =>
+     import("./Globe")
+      .then((m) => m.World)
+      .catch((err) => {
+        console.error("Error loading Globe:",err);
+        return () => <div> Error loading globe Visualization</div>;
+      }),
+ {
   ssr: false,
+  loading: () => ( 
+  <div className="flex items-center justify-center h-96"> 
+  <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+  </div>) 
 });
 
 export function GlobeDemo() {
@@ -400,7 +413,12 @@ export function GlobeDemo() {
         
         <div className="absolute w-full bottom-0 inset-x-0 h-40 bg-gradient-to-b pointer-events-none select-none from-transparent dark:to-black to-white z-40" />
         <div className="absolute w-full  h-72 md:h-full z-10">
-          <World data={sampleArcs} globeConfig={globeConfig} />
+        <ErrorBoundary fallback={<div>Something went wrong with the globe visualization</div>}>
+          <Suspense fallback={<div>Loading globe...</div>}>
+           <World data={sampleArcs} globeConfig={globeConfig} />
+          </Suspense>
+        </ErrorBoundary>
+
         </div>
       </div>
     </div>

@@ -114,7 +114,7 @@ export function Globe({ globeConfig, data }: WorldProps) {
   };
 
   const _buildData = () => {
-    const arcs = data;
+    const arcs = data
     let points = [];
     for (let i = 0; i < arcs.length; i++) {
       const arc = arcs[i];
@@ -149,25 +149,27 @@ export function Globe({ globeConfig, data }: WorldProps) {
   };
 
   useEffect(() => {
-    if (globeRef.current && globeData) {
-      globeRef.current
+    if (globeRef.current ) {
+      if (countries?.features?.length > 0 && data?.length > 0) {
+        globeRef.current
         .hexPolygonsData(countries.features)
         .hexPolygonResolution(3)
         .hexPolygonMargin(0.7)
         .showAtmosphere(defaultProps.showAtmosphere)
         .atmosphereColor(defaultProps.atmosphereColor)
         .atmosphereAltitude(defaultProps.atmosphereAltitude)
-        .hexPolygonColor((e) => {
-          return defaultProps.polygonColor;
+        .hexPolygonColor(() =>  defaultProps.polygonColor);
+        requestAnimationFrame(() =>{startAnimation();
         });
-      startAnimation();
+      }
     }
   }, [globeData]);
 
   const startAnimation = () => {
     if (!globeRef.current || !globeData) return;
 
-    globeRef.current
+    try {
+      globeRef.current
       .arcsData(data)
       .arcStartLat((d) => (d as { startLat: number }).startLat * 1)
       .arcStartLng((d) => (d as { startLng: number }).startLng * 1)
@@ -185,12 +187,14 @@ export function Globe({ globeConfig, data }: WorldProps) {
       .arcDashGap(15)
       .arcDashAnimateTime((e) => defaultProps.arcTime);
 
-    globeRef.current
+    if (globeData.length > 0){
+      globeRef.current
       .pointsData(data)
       .pointColor((e) => (e as { color: string }).color)
       .pointsMerge(true)
       .pointAltitude(0.0)
       .pointRadius(2);
+    }
 
     globeRef.current
       .ringsData([])
@@ -200,7 +204,10 @@ export function Globe({ globeConfig, data }: WorldProps) {
       .ringRepeatPeriod(
         (defaultProps.arcTime * defaultProps.arcLength) / defaultProps.rings
       );
-  };
+    } catch (err) {
+      console.error("Error in startAnimation:", err);
+    }
+  }
 
   useEffect(() => {
     if (!globeRef.current || !globeData) return;
@@ -247,7 +254,11 @@ export function World(props: WorldProps) {
   const scene = new Scene();
   scene.fog = new Fog(0xffffff, 400, 2000);
   return (
-    <Canvas scene={scene} camera={new PerspectiveCamera(50, aspect, 180, 1800)}>
+    <Canvas scene={scene} camera={new PerspectiveCamera(50, aspect, 180, 1800)}
+    onError={(error) => {
+      console.error("Canvas error:", error);
+    }}
+    >
       <WebGLRendererConfig />
       <ambientLight color={globeConfig.ambientLight} intensity={0.6} />
       <directionalLight

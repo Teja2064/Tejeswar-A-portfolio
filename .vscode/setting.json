@@ -1,14 +1,20 @@
+
 {
-    "editor.formatOnPaste": true,
-    "editor.formatOnSave": true,
-    "[typescriptreact]": {
+  "editor.formatOnSave": true,
+  "[typescriptreact]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[typescript]": {
+  },
+  "[typescript]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "editor.codeActionsOnSave": {
+  },
+  "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "explicit"
-    },
-    "editor.wordWrap": "on"
+  },
+  "editor.wordWrap": "on",
+  "files.exclude": {
+      ".next": true,
+      "out": true,
+      "build": true,
+      "node_modules": true
   }
+}

@@ -1,15 +1,20 @@
+
 import type { Metadata } from "next";
+
 import { Inter } from "next/font/google";
 
 import "./globals.css";
 import { ThemeProvider } from "./provider";
 
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Tejeswar's Portfolio",
-  description: "Modern & Minimal Tejeswar Portfolio",
+  description: "Modern  Tejeswar Portfolio",
 };
+
+
 
 export default function RootLayout({
   children,
@@ -19,9 +24,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/jsm-logo.png" sizes="any" />
+        <link rel="icon" href="/myimg-Photoroom.png" sizes="any" />
       </head>
       <body className={inter.className}>
+       
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

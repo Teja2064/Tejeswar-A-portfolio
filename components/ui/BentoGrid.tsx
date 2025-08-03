@@ -1,8 +1,13 @@
+'use client'
+
+import { type ReactNode } from 'react'
+// import dynamic from 'next/dynamic';
 import { useState } from "react";
 import { IoCopyOutline } from "react-icons/io5";
 
 // Also install this npm i --save-dev @types/react-lottie
 import Lottie from "react-lottie";
+
 
 import { cn } from "@/lib/utils";
 
@@ -52,14 +57,16 @@ export const BentoGridItem = ({
   titleClassName?: string;
   spareImg?: string;
 }) => {
-  const leftLists = ["ReactJS", "Express", "Typescript"];
-  const rightLists = ["VueJS", "NuxtJS", "GraphQL"];
+  const leftLists = ["ReactJS", "Java", "AI/ML"];
+  const rightLists = ["Python", ".NET", "Angular"];
+
 
   const [copied, setCopied] = useState(false);
+  
 
   const defaultOptions = {
-    loop: copied,
-    autoplay: copied,
+    loop: copied || false,
+    autoplay: copied || false,
     animationData: animationData,
     rendererSettings: {
       preserveAspectRatio: "xMidYMid slice",
@@ -71,6 +78,7 @@ export const BentoGridItem = ({
     navigator.clipboard.writeText(text);
     setCopied(true);
   };
+
 
   return (
     <div
@@ -86,6 +94,7 @@ export const BentoGridItem = ({
         backgroundColor:
           "linear-gradient(90deg, rgba(4,7,29,1) 0%, rgba(12,14,35,1) 100%)",
       }}
+      
     >
       {/* add img divs */}
       <div className={`${id === 6 && "flex justify-center"} h-full`}>
@@ -171,17 +180,16 @@ export const BentoGridItem = ({
           )}
           {id === 6 && (
             <div className="mt-5 relative">
-              {/* button border magic from tailwind css buttons  */}
-              {/* add rounded-md h-8 md:h-8, remove rounded-full */}
-              {/* remove focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 */}
-              {/* add handleCopy() for the copy the text */}
-              <div
-                className={`absolute -bottom-5 right-0 ${copied ? "block" : "block"
-                  }`}
-              >
-                {/* <img src="/confetti.gif" alt="confetti" /> */}
-                <Lottie options={defaultOptions} height={200} width={400} />
-              </div>
+              {copied && (
+                <div className="absolute -bottom-5 right-0">
+                  <Lottie 
+                  options={defaultOptions}
+                  height={200}
+                  width={400}
+                  isClickToPauseDisabled={true}
+                  />
+                </div>
+              )}
 
               <MagicButton
                 title={copied ? "Email is Copied!" : "Copy my email address"}
