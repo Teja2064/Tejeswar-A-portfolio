@@ -1,4 +1,4 @@
-import {withSentryConfig} from '@sentry/nextjs';
+// import {withSentryConfig} from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -43,23 +43,23 @@ const nextConfig = {
   },
 };
 
-// Only wrap with Sentry if we're in production and Sentry is properly configured
-const isProduction = process.env.NODE_ENV === 'production';
-const hasSentryConfig = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
+// Temporarily disable Sentry to prevent errors
+// const isProduction = process.env.NODE_ENV === 'production';
+// const hasSentryConfig = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
 
-const finalConfig = isProduction && hasSentryConfig 
-  ? withSentryConfig(nextConfig, {
-      org: "it-solutions-2v",
-      project: "javascript-nextjs",
-      silent: !process.env.CI,
-      widenClientFileUpload: true,
-      reactComponentAnnotation: {
-        enabled: true,
-      },
-      hideSourceMaps: true,
-      disableLogger: true,
-      automaticVercelMonitors: true,
-    })
-  : nextConfig;
+// const finalConfig = isProduction && hasSentryConfig 
+//   ? withSentryConfig(nextConfig, {
+//       org: "it-solutions-2v",
+//       project: "javascript-nextjs",
+//       silent: !process.env.CI,
+//       widenClientFileUpload: true,
+//       reactComponentAnnotation: {
+//         enabled: true,
+//       },
+//       hideSourceMaps: true,
+//       disableLogger: true,
+//       automaticVercelMonitors: true,
+//     })
+//   : nextConfig;
 
-export default finalConfig;
+export default nextConfig;

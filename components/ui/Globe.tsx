@@ -4,10 +4,9 @@ import { Color, Scene, Fog, PerspectiveCamera, Vector3 } from "three";
 import ThreeGlobe from "three-globe";
 import { useThree, Object3DNode, Canvas, extend } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import dynamic from "next/dynamic";
 
-// Remove the dynamic import for JSON as it's not compatible with dynamic()
-// We'll handle the lazy loading in the component instead
+// Import countries data directly to avoid lazy loading issues
+import countries from "@/data/globe.json";
 
 declare module "@react-three/fiber" {
   interface ThreeElements {
@@ -76,7 +75,6 @@ export function Globe({ globeConfig, data }: WorldProps) {
     | null
   >(null);
 
-  const [countriesData, setCountriesData] = useState<any>(null);
   const globeRef = useRef<ThreeGlobe | null>(null);
 
   const defaultProps = {
@@ -95,20 +93,6 @@ export function Globe({ globeConfig, data }: WorldProps) {
     maxRings: 3,
     ...globeConfig,
   };
-
-  // Load countries data
-  useEffect(() => {
-    const loadCountries = async () => {
-      try {
-        const countriesModule = await import("@/data/globe.json");
-        setCountriesData(countriesModule.default || countriesModule);
-      } catch (error) {
-        console.error("Error loading countries data:", error);
-        setCountriesData({ features: [] });
-      }
-    };
-    loadCountries();
-  }, []);
 
   useEffect(() => {
     if (globeRef.current) {
@@ -179,10 +163,10 @@ export function Globe({ globeConfig, data }: WorldProps) {
   };
 
   useEffect(() => {
-    if (globeRef.current && countriesData?.features?.length > 0 && data?.length > 0) {
+    if (globeRef.current && countries?.features?.length > 0 && data?.length > 0) {
       try {
         globeRef.current
-          .hexPolygonsData(countriesData.features)
+          .hexPolygonsData(countries.features)
           .hexPolygonResolution(3)
           .hexPolygonMargin(0.7)
           .showAtmosphere(defaultProps.showAtmosphere)
@@ -197,7 +181,7 @@ export function Globe({ globeConfig, data }: WorldProps) {
         console.error("Error setting up globe:", error);
       }
     }
-  }, [globeData, countriesData]);
+  }, [globeData]);
 
   const startAnimation = () => {
     if (!globeRef.current || !globeData) return;

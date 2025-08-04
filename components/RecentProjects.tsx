@@ -8,6 +8,10 @@ import { projects } from "@/data";
 import { PinContainer } from "./ui/3d-pin";
 
 const RecentProjects = () => {
+  const handleProjectClick = (link: string) => {
+    window.open(link, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="py-20" id="projects">
       <h1 className="heading">
@@ -17,8 +21,9 @@ const RecentProjects = () => {
       <div className="flex flex-wrap items-center justify-center p-4 gap-16 mt-10">
         {projects.map((item) => (
           <div
-            className="lg:min-h-[32.5rem] h-[25rem] flex items-center justify-center sm:w-96 w-[80vw]"
+            className="lg:min-h-[32.5rem] h-[25rem] flex items-center justify-center sm:w-96 w-[80vw] cursor-pointer"
             key={item.id}
+            onClick={() => handleProjectClick(item.link)}
           >
             <PinContainer
               title={item.title}
@@ -67,12 +72,12 @@ const RecentProjects = () => {
                   ))}
                 </div>
 
-                {/* <div className="flex justify-center items-center">
+                <div className="flex justify-center items-center">
                   <p className="flex lg:text-xl md:text-xs text-sm text-purple">
-                    Check Live Site
+                    Click to Visit
                   </p>
                   <FaLocationArrow className="ms-3" color="#CBACF9" />
-                </div> */}
+                </div>
               </div>
             </PinContainer>
           </div>
