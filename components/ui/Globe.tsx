@@ -264,13 +264,33 @@ export function WebGLRendererConfig() {
 
   useEffect(() => {
     try {
-      gl.setPixelRatio(window.devicePixelRatio);
+      gl.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio to prevent context loss
       gl.setSize(size.width, size.height);
       gl.setClearColor(0xffaaff, 0);
+      
+      // Add context lost/restored handlers
+      const handleContextLost = (event: Event) => {
+        console.warn('WebGL context lost, attempting to restore...');
+        event.preventDefault();
+      };
+
+      const handleContextRestored = () => {
+        console.log('WebGL context restored');
+        gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        gl.setSize(size.width, size.height);
+      };
+
+      gl.domElement.addEventListener('webglcontextlost', handleContextLost, false);
+      gl.domElement.addEventListener('webglcontextrestored', handleContextRestored, false);
+
+      return () => {
+        gl.domElement.removeEventListener('webglcontextlost', handleContextLost);
+        gl.domElement.removeEventListener('webglcontextrestored', handleContextRestored);
+      };
     } catch (error) {
       console.error("Error configuring WebGL renderer:", error);
     }
-  }, []);
+  }, [gl, size]);
 
   return null;
 }
@@ -286,6 +306,15 @@ export function World(props: WorldProps) {
       camera={new PerspectiveCamera(50, aspect, 180, 1800)}
       onError={(error) => {
         console.error("Canvas error:", error);
+      }}
+      gl={{
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance",
+        failIfMajorPerformanceCaveat: false,
+        preserveDrawingBuffer: false,
+        stencil: false,
+        depth: true,
       }}
     >
       <WebGLRendererConfig />

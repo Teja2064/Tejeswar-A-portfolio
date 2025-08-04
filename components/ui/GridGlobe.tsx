@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useState } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { ErrorBoundary } from "react-error-boundary";
@@ -20,6 +20,23 @@ const World = dynamic(
   <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
   </div>) 
 });
+
+// Simple fallback component for when WebGL fails
+const GlobeFallback = () => {
+  return (
+    <div className="flex items-center justify-center h-full w-full bg-gradient-to-br from-blue-900 to-purple-900 rounded-lg">
+      <div className="text-center text-white">
+        <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 flex items-center justify-center">
+          <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold mb-2">Global Connections</h3>
+        <p className="text-sm opacity-80">Interactive globe visualization</p>
+      </div>
+    </div>
+  );
+};
 
 // Lazy load the globe data to reduce initial bundle size
 const globeData = [
@@ -134,6 +151,7 @@ const globeData = [
 ];
 
 export function GlobeDemo() {
+  const [webglSupported, setWebglSupported] = useState(true);
   const globeConfig = {
     pointSize: 4,
     globeColor: "#062056",
@@ -157,6 +175,20 @@ export function GlobeDemo() {
     autoRotateSpeed: 0.5,
   };
 
+  // Check WebGL support
+  React.useEffect(() => {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        setWebglSupported(false);
+      }
+    } catch (error) {
+      console.warn('WebGL not supported:', error);
+      setWebglSupported(false);
+    }
+  }, []);
+
   return (
     <div className="flex items-center justify-center absolute -left-5 top-36 md:top-40 w-full h-full">
       <div className="max-w-7xl mx-auto w-full relative overflow-hidden px-4 h-96">
@@ -164,18 +196,18 @@ export function GlobeDemo() {
         <div className="absolute w-full bottom-0 inset-x-0 h-40 bg-gradient-to-b pointer-events-none select-none from-transparent dark:to-black to-white z-40" />
         <div className="absolute w-full h-72 md:h-full z-10">
         <ErrorBoundary 
-          fallback={
-            <div className="flex items-center justify-center h-full text-gray-500">
-              Something went wrong with the globe visualization
-            </div>
-          }
+          fallback={<GlobeFallback />}
         >
           <Suspense fallback={
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           }>
-           <World data={globeData} globeConfig={globeConfig} />
+           {webglSupported ? (
+             <World data={globeData} globeConfig={globeConfig} />
+           ) : (
+             <GlobeFallback />
+           )}
           </Suspense>
         </ErrorBoundary>
 
