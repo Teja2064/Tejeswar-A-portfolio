@@ -99,7 +99,7 @@ export const navItems = [
       title: "Threads Clone App",
       des: "Full stack app for with Next.js, Tailwind,",
       img: "/pr2.svg",
-      iconLists: ["/next.svg", "/tail.svg", "/ts.svg", , "/c.svg"],
+      iconLists: ["/next.svg", "/tail.svg", "/ts.svg", "/c.svg"],
       link: "https://github.com/Teja2064/Threads_app",
     },
     {
