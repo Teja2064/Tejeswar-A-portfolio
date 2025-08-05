@@ -25,15 +25,24 @@ const Footer = () => {
         </div>
         <div className='flex mt-16 md:flex-row flex-col justify-between items-center'>
             <p className='md:text-base text-sm md:font-normal font-light '>Copyright © Tejeswar</p>
+            <a 
+                href="https://www.linkedin.com/in/tejeswar-a-577250145/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className='text-purple hover:text-white transition-colors duration-300 text-sm mt-2'
+            >
+                Connect on LinkedIn
+            </a>
             
             {/* LinkedIn Link */}
-            <div className='flex gap-4 mt-4 md:mt-0'>
+            <div className='flex gap-4 mt-4 md:mt-0 relative z-10'>
                 <a 
                     href="https://www.linkedin.com/in/tejeswar-a-577250145/" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className='text-white hover:text-purple transition-colors duration-300 p-2 rounded-lg hover:bg-white/10'
+                    className='text-white hover:text-purple transition-colors duration-300 p-2 rounded-lg hover:bg-white/10 cursor-pointer'
                     aria-label="Connect on LinkedIn"
+                    onClick={() => window.open('https://www.linkedin.com/in/tejeswar-a-577250145/', '_blank')}
                 >
                     <FaLinkedin size={24} />
                 </a>
