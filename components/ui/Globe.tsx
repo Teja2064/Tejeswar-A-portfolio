@@ -63,49 +63,6 @@ interface WorldProps {
 
 let numbersOfRings = [0];
 
-// Validate and sanitize position data with strict checks
-const validatePosition = (pos: Position): Position | null => {
-  const { startLat, startLng, endLat, endLng, arcAlt, order } = pos;
-  
-  // Check for NaN, undefined, or null values
-  if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng) || isNaN(arcAlt) || isNaN(order)) {
-    console.warn('Invalid position data detected (NaN values):', pos);
-    return null;
-  }
-  
-  // Check for infinite values
-  if (!isFinite(startLat) || !isFinite(startLng) || !isFinite(endLat) || !isFinite(endLng) || !isFinite(arcAlt)) {
-    console.warn('Invalid position data detected (infinite values):', pos);
-    return null;
-  }
-  
-  // Validate latitude range (-90 to 90)
-  if (startLat < -90 || startLat > 90 || endLat < -90 || endLat > 90) {
-    console.warn('Latitude out of range:', pos);
-    return null;
-  }
-  
-  // Validate longitude range (-180 to 180)
-  if (startLng < -180 || startLng > 180 || endLng < -180 || endLng > 180) {
-    console.warn('Longitude out of range:', pos);
-    return null;
-  }
-  
-  // Ensure arcAlt is positive and reasonable
-  if (arcAlt <= 0 || arcAlt > 10) {
-    console.warn('Invalid arcAlt value:', arcAlt);
-    return null;
-  }
-  
-  return pos;
-};
-
-// Safe number conversion with fallbacks
-const safeNumber = (value: any, fallback: number = 0): number => {
-  const num = Number(value);
-  return isNaN(num) || !isFinite(num) ? fallback : num;
-};
-
 export function Globe({ globeConfig, data }: WorldProps) {
   const [globeData, setGlobeData] = useState<
     | {
@@ -156,8 +113,8 @@ export function Globe({ globeConfig, data }: WorldProps) {
       };
       globeMaterial.color = new Color(globeConfig.globeColor);
       globeMaterial.emissive = new Color(globeConfig.emissive);
-      globeMaterial.emissiveIntensity = safeNumber(globeConfig.emissiveIntensity, 0.1);
-      globeMaterial.shininess = safeNumber(globeConfig.shininess, 0.9);
+      globeMaterial.emissiveIntensity = globeConfig.emissiveIntensity || 0.1;
+      globeMaterial.shininess = globeConfig.shininess || 0.9;
     } catch (error) {
       console.error("Error building material:", error);
     }
@@ -165,35 +122,25 @@ export function Globe({ globeConfig, data }: WorldProps) {
 
   const _buildData = () => {
     try {
-      // Filter and validate data
-      const validArcs = data.filter(arc => validatePosition(arc) !== null);
-      
-      if (validArcs.length === 0) {
-        console.warn('No valid arc data found, using fallback data');
-        setGlobeData([]);
-        return;
-      }
-
+      const arcs = data;
       let points = [];
-      for (let i = 0; i < validArcs.length; i++) {
-        const arc = validArcs[i];
+      for (let i = 0; i < arcs.length; i++) {
+        const arc = arcs[i];
         const rgb = hexToRgb(arc.color) as { r: number; g: number; b: number };
-        if (rgb) {
-          points.push({
-            size: safeNumber(defaultProps.pointSize, 1),
-            order: safeNumber(arc.order, 1),
-            color: (t: number) => `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${1 - t})`,
-            lat: safeNumber(arc.startLat, 0),
-            lng: safeNumber(arc.startLng, 0),
-          });
-          points.push({
-            size: safeNumber(defaultProps.pointSize, 1),
-            order: safeNumber(arc.order, 1),
-            color: (t: number) => `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${1 - t})`,
-            lat: safeNumber(arc.endLat, 0),
-            lng: safeNumber(arc.endLng, 0),
-          });
-        }
+        points.push({
+          size: defaultProps.pointSize,
+          order: arc.order,
+          color: (t: number) => `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${1 - t})`,
+          lat: arc.startLat,
+          lng: arc.startLng,
+        });
+        points.push({
+          size: defaultProps.pointSize,
+          order: arc.order,
+          color: (t: number) => `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${1 - t})`,
+          lat: arc.endLat,
+          lng: arc.endLng,
+        });
       }
 
       // remove duplicates for same lat and lng
@@ -222,7 +169,7 @@ export function Globe({ globeConfig, data }: WorldProps) {
           .hexPolygonMargin(0.7)
           .showAtmosphere(defaultProps.showAtmosphere)
           .atmosphereColor(defaultProps.atmosphereColor)
-          .atmosphereAltitude(safeNumber(defaultProps.atmosphereAltitude, 0.1))
+          .atmosphereAltitude(defaultProps.atmosphereAltitude)
           .hexPolygonColor(() => defaultProps.polygonColor);
         
         requestAnimationFrame(() => {
@@ -238,46 +185,40 @@ export function Globe({ globeConfig, data }: WorldProps) {
     if (!globeRef.current || !globeData) return;
 
     try {
-      // Use validated data
-      const validArcs = data.filter(arc => validatePosition(arc) !== null);
-      
-      if (validArcs.length === 0) {
-        console.warn('No valid arcs for animation');
-        return;
-      }
-
       globeRef.current
-        .arcsData(validArcs)
-        .arcStartLat((d) => safeNumber((d as { startLat: number }).startLat, 0))
-        .arcStartLng((d) => safeNumber((d as { startLng: number }).startLng, 0))
-        .arcEndLat((d) => safeNumber((d as { endLat: number }).endLat, 0))
-        .arcEndLng((d) => safeNumber((d as { endLng: number }).endLng, 0))
+        .arcsData(data)
+        .arcStartLat((d) => (d as { startLat: number }).startLat * 1)
+        .arcStartLng((d) => (d as { startLng: number }).startLng * 1)
+        .arcEndLat((d) => (d as { endLat: number }).endLat * 1)
+        .arcEndLng((d) => (d as { endLng: number }).endLng * 1)
         .arcColor((e: any) => (e as { color: string }).color)
-        .arcAltitude((e) => safeNumber((e as { arcAlt: number }).arcAlt, 0.1))
+        .arcAltitude((e) => {
+          return (e as { arcAlt: number }).arcAlt * 1;
+        })
         .arcStroke((e) => {
           return [0.32, 0.28, 0.3][Math.round(Math.random() * 2)];
         })
-        .arcDashLength(safeNumber(defaultProps.arcLength, 0.9))
-        .arcDashInitialGap((e) => safeNumber((e as { order: number }).order, 1))
+        .arcDashLength(defaultProps.arcLength)
+        .arcDashInitialGap((e) => (e as { order: number }).order * 1)
         .arcDashGap(15)
-        .arcDashAnimateTime((e) => safeNumber(defaultProps.arcTime, 2000));
+        .arcDashAnimateTime((e) => defaultProps.arcTime);
 
       if (globeData.length > 0) {
         globeRef.current
-          .pointsData(validArcs)
+          .pointsData(data)
           .pointColor((e) => (e as { color: string }).color)
           .pointsMerge(true)
           .pointAltitude(0.0)
-          .pointRadius(safeNumber(defaultProps.pointSize, 2));
+          .pointRadius(2);
       }
 
       globeRef.current
         .ringsData([])
         .ringColor((e: any) => (t: any) => e.color(t))
-        .ringMaxRadius(safeNumber(defaultProps.maxRings, 3))
+        .ringMaxRadius(defaultProps.maxRings)
         .ringPropagationSpeed(RING_PROPAGATION_SPEED)
         .ringRepeatPeriod(
-          (safeNumber(defaultProps.arcTime, 2000) * safeNumber(defaultProps.arcLength, 0.9)) / safeNumber(defaultProps.rings, 1)
+          (defaultProps.arcTime * defaultProps.arcLength) / defaultProps.rings
         );
     } catch (err) {
       console.error("Error in startAnimation:", err);
@@ -289,26 +230,21 @@ export function Globe({ globeConfig, data }: WorldProps) {
 
     const interval = setInterval(() => {
       if (!globeRef.current || !globeData) return;
-      try {
-        const validArcs = data.filter(arc => validatePosition(arc) !== null);
-        numbersOfRings = genRandomNumbers(
-          0,
-          validArcs.length,
-          Math.floor((validArcs.length * 4) / 5)
-        );
+      numbersOfRings = genRandomNumbers(
+        0,
+        data.length,
+        Math.floor((data.length * 4) / 5)
+      );
 
-        globeRef.current.ringsData(
-          globeData.filter((d, i) => numbersOfRings.includes(i))
-        );
-      } catch (error) {
-        console.error("Error updating rings:", error);
-      }
+      globeRef.current.ringsData(
+        globeData.filter((d, i) => numbersOfRings.includes(i))
+      );
     }, 2000);
 
     return () => {
       clearInterval(interval);
     };
-  }, [globeRef.current, globeData, data.length]);
+  }, [globeRef.current, globeData]);
 
   return (
     <>
@@ -321,34 +257,10 @@ export function WebGLRendererConfig() {
   const { gl, size } = useThree();
 
   useEffect(() => {
-    try {
-      gl.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio to prevent context loss
-      gl.setSize(size.width, size.height);
-      gl.setClearColor(0xffaaff, 0);
-      
-      // Add context lost/restored handlers
-      const handleContextLost = (event: Event) => {
-        console.warn('WebGL context lost, attempting to restore...');
-        event.preventDefault();
-      };
-
-      const handleContextRestored = () => {
-        console.log('WebGL context restored');
-        gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        gl.setSize(size.width, size.height);
-      };
-
-      gl.domElement.addEventListener('webglcontextlost', handleContextLost, false);
-      gl.domElement.addEventListener('webglcontextrestored', handleContextRestored, false);
-
-      return () => {
-        gl.domElement.removeEventListener('webglcontextlost', handleContextLost);
-        gl.domElement.removeEventListener('webglcontextrestored', handleContextRestored);
-      };
-    } catch (error) {
-      console.error("Error configuring WebGL renderer:", error);
-    }
-  }, [gl, size]);
+    gl.setPixelRatio(window.devicePixelRatio);
+    gl.setSize(size.width, size.height);
+    gl.setClearColor(0xffaaff, 0);
+  }, []);
 
   return null;
 }
@@ -357,24 +269,8 @@ export function World(props: WorldProps) {
   const { globeConfig } = props;
   const scene = new Scene();
   scene.fog = new Fog(0xffffff, 400, 2000);
-  
   return (
-    <Canvas 
-      scene={scene} 
-      camera={new PerspectiveCamera(50, aspect, 180, 1800)}
-      onError={(error) => {
-        console.error("Canvas error:", error);
-      }}
-      gl={{
-        antialias: true,
-        alpha: true,
-        powerPreference: "high-performance",
-        failIfMajorPerformanceCaveat: false,
-        preserveDrawingBuffer: false,
-        stencil: false,
-        depth: true,
-      }}
-    >
+    <Canvas scene={scene} camera={new PerspectiveCamera(50, aspect, 180, 1800)}>
       <WebGLRendererConfig />
       <ambientLight color={globeConfig.ambientLight} intensity={0.6} />
       <directionalLight
@@ -406,36 +302,27 @@ export function World(props: WorldProps) {
 }
 
 export function hexToRgb(hex: string) {
-  try {
-    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-    hex = hex.replace(shorthandRegex, function (m, r, g, b) {
-      return r + r + g + g + b + b;
-    });
+  var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  hex = hex.replace(shorthandRegex, function (m, r, g, b) {
+    return r + r + g + g + b + b;
+  });
 
-    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
-        }
-      : null;
-  } catch (error) {
-    console.error("Error converting hex to RGB:", error);
-    return null;
-  }
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
 }
 
 export function genRandomNumbers(min: number, max: number, count: number) {
-  try {
-    const arr = [];
-    while (arr.length < count) {
-      const r = Math.floor(Math.random() * (max - min)) + min;
-      if (arr.indexOf(r) === -1) arr.push(r);
-    }
-    return arr;
-  } catch (error) {
-    console.error("Error generating random numbers:", error);
-    return [];
+  const arr = [];
+  while (arr.length < count) {
+    const r = Math.floor(Math.random() * (max - min)) + min;
+    if (arr.indexOf(r) === -1) arr.push(r);
   }
+
+  return arr;
 }

@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense, lazy, useState } from "react";
+import React, { Suspense, lazy } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { ErrorBoundary } from "react-error-boundary";
@@ -38,7 +38,7 @@ const GlobeFallback = () => {
   );
 };
 
-// Simplified and validated globe data to prevent coordinate issues
+// Clean globe data following Aceternity UI pattern
 const globeData = [
   {
     order: 1,
@@ -114,19 +114,7 @@ const globeData = [
   },
 ];
 
-// Validate globe data before using
-const validateGlobeData = (data: any[]) => {
-  return data.every(item => {
-    const { startLat, startLng, endLat, endLng, arcAlt, order } = item;
-    return !isNaN(startLat) && !isNaN(startLng) && !isNaN(endLat) && !isNaN(endLng) && !isNaN(arcAlt) && !isNaN(order) &&
-           isFinite(startLat) && isFinite(startLng) && isFinite(endLat) && isFinite(endLng) && isFinite(arcAlt) && isFinite(order);
-  });
-};
-
 export function GlobeDemo() {
-  const [webglSupported, setWebglSupported] = useState(true);
-  const [dataValid, setDataValid] = useState(true);
-  
   const globeConfig = {
     pointSize: 4,
     globeColor: "#062056",
@@ -150,26 +138,6 @@ export function GlobeDemo() {
     autoRotateSpeed: 0.5,
   };
 
-  // Check WebGL support and validate data
-  React.useEffect(() => {
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      if (!gl) {
-        setWebglSupported(false);
-      }
-      
-      // Validate globe data
-      if (!validateGlobeData(globeData)) {
-        console.warn('Invalid globe data detected');
-        setDataValid(false);
-      }
-    } catch (error) {
-      console.warn('WebGL not supported:', error);
-      setWebglSupported(false);
-    }
-  }, []);
-
   return (
     <div className="flex items-center justify-center absolute -left-5 top-36 md:top-40 w-full h-full">
       <div className="max-w-7xl mx-auto w-full relative overflow-hidden px-4 h-96">
@@ -184,11 +152,7 @@ export function GlobeDemo() {
               <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           }>
-           {webglSupported && dataValid ? (
-             <World data={globeData} globeConfig={globeConfig} />
-           ) : (
-             <GlobeFallback />
-           )}
+           <World data={globeData} globeConfig={globeConfig} />
           </Suspense>
         </ErrorBoundary>
 
