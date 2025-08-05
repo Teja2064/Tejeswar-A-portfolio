@@ -63,6 +63,31 @@ interface WorldProps {
 
 let numbersOfRings = [0];
 
+// Validate and sanitize position data
+const validatePosition = (pos: Position): Position | null => {
+  const { startLat, startLng, endLat, endLng, arcAlt } = pos;
+  
+  // Check for NaN or invalid values
+  if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng) || isNaN(arcAlt)) {
+    console.warn('Invalid position data detected:', pos);
+    return null;
+  }
+  
+  // Validate latitude range (-90 to 90)
+  if (startLat < -90 || startLat > 90 || endLat < -90 || endLat > 90) {
+    console.warn('Latitude out of range:', pos);
+    return null;
+  }
+  
+  // Validate longitude range (-180 to 180)
+  if (startLng < -180 || startLng > 180 || endLng < -180 || endLng > 180) {
+    console.warn('Longitude out of range:', pos);
+    return null;
+  }
+  
+  return pos;
+};
+
 export function Globe({ globeConfig, data }: WorldProps) {
   const [globeData, setGlobeData] = useState<
     | {
@@ -122,10 +147,18 @@ export function Globe({ globeConfig, data }: WorldProps) {
 
   const _buildData = () => {
     try {
-      const arcs = data;
+      // Filter and validate data
+      const validArcs = data.filter(arc => validatePosition(arc) !== null);
+      
+      if (validArcs.length === 0) {
+        console.warn('No valid arc data found, using fallback data');
+        setGlobeData([]);
+        return;
+      }
+
       let points = [];
-      for (let i = 0; i < arcs.length; i++) {
-        const arc = arcs[i];
+      for (let i = 0; i < validArcs.length; i++) {
+        const arc = validArcs[i];
         const rgb = hexToRgb(arc.color) as { r: number; g: number; b: number };
         if (rgb) {
           points.push({
@@ -187,27 +220,51 @@ export function Globe({ globeConfig, data }: WorldProps) {
     if (!globeRef.current || !globeData) return;
 
     try {
+      // Use validated data
+      const validArcs = data.filter(arc => validatePosition(arc) !== null);
+      
+      if (validArcs.length === 0) {
+        console.warn('No valid arcs for animation');
+        return;
+      }
+
       globeRef.current
-        .arcsData(data)
-        .arcStartLat((d) => (d as { startLat: number }).startLat * 1)
-        .arcStartLng((d) => (d as { startLng: number }).startLng * 1)
-        .arcEndLat((d) => (d as { endLat: number }).endLat * 1)
-        .arcEndLng((d) => (d as { endLng: number }).endLng * 1)
+        .arcsData(validArcs)
+        .arcStartLat((d) => {
+          const lat = (d as { startLat: number }).startLat;
+          return isNaN(lat) ? 0 : lat;
+        })
+        .arcStartLng((d) => {
+          const lng = (d as { startLng: number }).startLng;
+          return isNaN(lng) ? 0 : lng;
+        })
+        .arcEndLat((d) => {
+          const lat = (d as { endLat: number }).endLat;
+          return isNaN(lat) ? 0 : lat;
+        })
+        .arcEndLng((d) => {
+          const lng = (d as { endLng: number }).endLng;
+          return isNaN(lng) ? 0 : lng;
+        })
         .arcColor((e: any) => (e as { color: string }).color)
         .arcAltitude((e) => {
-          return (e as { arcAlt: number }).arcAlt * 1;
+          const alt = (e as { arcAlt: number }).arcAlt;
+          return isNaN(alt) ? 0.1 : alt;
         })
         .arcStroke((e) => {
           return [0.32, 0.28, 0.3][Math.round(Math.random() * 2)];
         })
         .arcDashLength(defaultProps.arcLength)
-        .arcDashInitialGap((e) => (e as { order: number }).order * 1)
+        .arcDashInitialGap((e) => {
+          const order = (e as { order: number }).order;
+          return isNaN(order) ? 1 : order;
+        })
         .arcDashGap(15)
         .arcDashAnimateTime((e) => defaultProps.arcTime);
 
       if (globeData.length > 0) {
         globeRef.current
-          .pointsData(data)
+          .pointsData(validArcs)
           .pointColor((e) => (e as { color: string }).color)
           .pointsMerge(true)
           .pointAltitude(0.0)
@@ -233,10 +290,11 @@ export function Globe({ globeConfig, data }: WorldProps) {
     const interval = setInterval(() => {
       if (!globeRef.current || !globeData) return;
       try {
+        const validArcs = data.filter(arc => validatePosition(arc) !== null);
         numbersOfRings = genRandomNumbers(
           0,
-          data.length,
-          Math.floor((data.length * 4) / 5)
+          validArcs.length,
+          Math.floor((validArcs.length * 4) / 5)
         );
 
         globeRef.current.ringsData(
