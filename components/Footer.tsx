@@ -1,6 +1,7 @@
 import React from 'react'
 import MagicButton from './ui/MagicButton'
 import { FaLocationArrow } from 'react-icons/fa'
+import { FaLinkedin, FaGithub, FaTwitter } from 'react-icons/fa'
 
 
 const Footer = () => {
@@ -24,6 +25,26 @@ const Footer = () => {
         </div>
         <div className='flex mt-16 md:flex-row flex-col justify-between items-center'>
             <p className='md:text-base text-sm md:font-normal font-light '>Copyright © Tejeswar</p>
+            
+            {/* Social Media Links */}
+            <div className='flex gap-4 mt-4 md:mt-0'>
+                <a 
+                    href="https://www.linkedin.com/in/tejeswar-a-577250145/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className='text-white hover:text-purple transition-colors duration-300'
+                >
+                    <FaLinkedin size={24} />
+                </a>
+                <a 
+                    href="https://github.com/Teja2064" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className='text-white hover:text-purple transition-colors duration-300'
+                >
+                    <FaGithub size={24} />
+                </a>
+            </div>
         </div>
         
 
