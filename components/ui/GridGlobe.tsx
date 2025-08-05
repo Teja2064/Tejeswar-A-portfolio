@@ -114,8 +114,19 @@ const globeData = [
   },
 ];
 
+// Validate globe data before using
+const validateGlobeData = (data: any[]) => {
+  return data.every(item => {
+    const { startLat, startLng, endLat, endLng, arcAlt, order } = item;
+    return !isNaN(startLat) && !isNaN(startLng) && !isNaN(endLat) && !isNaN(endLng) && !isNaN(arcAlt) && !isNaN(order) &&
+           isFinite(startLat) && isFinite(startLng) && isFinite(endLat) && isFinite(endLng) && isFinite(arcAlt) && isFinite(order);
+  });
+};
+
 export function GlobeDemo() {
   const [webglSupported, setWebglSupported] = useState(true);
+  const [dataValid, setDataValid] = useState(true);
+  
   const globeConfig = {
     pointSize: 4,
     globeColor: "#062056",
@@ -139,13 +150,19 @@ export function GlobeDemo() {
     autoRotateSpeed: 0.5,
   };
 
-  // Check WebGL support
+  // Check WebGL support and validate data
   React.useEffect(() => {
     try {
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       if (!gl) {
         setWebglSupported(false);
+      }
+      
+      // Validate globe data
+      if (!validateGlobeData(globeData)) {
+        console.warn('Invalid globe data detected');
+        setDataValid(false);
       }
     } catch (error) {
       console.warn('WebGL not supported:', error);
@@ -167,7 +184,7 @@ export function GlobeDemo() {
               <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           }>
-           {webglSupported ? (
+           {webglSupported && dataValid ? (
              <World data={globeData} globeConfig={globeConfig} />
            ) : (
              <GlobeFallback />

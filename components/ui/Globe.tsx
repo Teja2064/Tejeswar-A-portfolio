@@ -63,13 +63,19 @@ interface WorldProps {
 
 let numbersOfRings = [0];
 
-// Validate and sanitize position data
+// Validate and sanitize position data with strict checks
 const validatePosition = (pos: Position): Position | null => {
-  const { startLat, startLng, endLat, endLng, arcAlt } = pos;
+  const { startLat, startLng, endLat, endLng, arcAlt, order } = pos;
   
-  // Check for NaN or invalid values
-  if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng) || isNaN(arcAlt)) {
-    console.warn('Invalid position data detected:', pos);
+  // Check for NaN, undefined, or null values
+  if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng) || isNaN(arcAlt) || isNaN(order)) {
+    console.warn('Invalid position data detected (NaN values):', pos);
+    return null;
+  }
+  
+  // Check for infinite values
+  if (!isFinite(startLat) || !isFinite(startLng) || !isFinite(endLat) || !isFinite(endLng) || !isFinite(arcAlt)) {
+    console.warn('Invalid position data detected (infinite values):', pos);
     return null;
   }
   
@@ -85,7 +91,19 @@ const validatePosition = (pos: Position): Position | null => {
     return null;
   }
   
+  // Ensure arcAlt is positive and reasonable
+  if (arcAlt <= 0 || arcAlt > 10) {
+    console.warn('Invalid arcAlt value:', arcAlt);
+    return null;
+  }
+  
   return pos;
+};
+
+// Safe number conversion with fallbacks
+const safeNumber = (value: any, fallback: number = 0): number => {
+  const num = Number(value);
+  return isNaN(num) || !isFinite(num) ? fallback : num;
 };
 
 export function Globe({ globeConfig, data }: WorldProps) {
@@ -138,8 +156,8 @@ export function Globe({ globeConfig, data }: WorldProps) {
       };
       globeMaterial.color = new Color(globeConfig.globeColor);
       globeMaterial.emissive = new Color(globeConfig.emissive);
-      globeMaterial.emissiveIntensity = globeConfig.emissiveIntensity || 0.1;
-      globeMaterial.shininess = globeConfig.shininess || 0.9;
+      globeMaterial.emissiveIntensity = safeNumber(globeConfig.emissiveIntensity, 0.1);
+      globeMaterial.shininess = safeNumber(globeConfig.shininess, 0.9);
     } catch (error) {
       console.error("Error building material:", error);
     }
@@ -162,18 +180,18 @@ export function Globe({ globeConfig, data }: WorldProps) {
         const rgb = hexToRgb(arc.color) as { r: number; g: number; b: number };
         if (rgb) {
           points.push({
-            size: defaultProps.pointSize,
-            order: arc.order,
+            size: safeNumber(defaultProps.pointSize, 1),
+            order: safeNumber(arc.order, 1),
             color: (t: number) => `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${1 - t})`,
-            lat: arc.startLat,
-            lng: arc.startLng,
+            lat: safeNumber(arc.startLat, 0),
+            lng: safeNumber(arc.startLng, 0),
           });
           points.push({
-            size: defaultProps.pointSize,
-            order: arc.order,
+            size: safeNumber(defaultProps.pointSize, 1),
+            order: safeNumber(arc.order, 1),
             color: (t: number) => `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${1 - t})`,
-            lat: arc.endLat,
-            lng: arc.endLng,
+            lat: safeNumber(arc.endLat, 0),
+            lng: safeNumber(arc.endLng, 0),
           });
         }
       }
@@ -204,7 +222,7 @@ export function Globe({ globeConfig, data }: WorldProps) {
           .hexPolygonMargin(0.7)
           .showAtmosphere(defaultProps.showAtmosphere)
           .atmosphereColor(defaultProps.atmosphereColor)
-          .atmosphereAltitude(defaultProps.atmosphereAltitude)
+          .atmosphereAltitude(safeNumber(defaultProps.atmosphereAltitude, 0.1))
           .hexPolygonColor(() => defaultProps.polygonColor);
         
         requestAnimationFrame(() => {
@@ -230,37 +248,19 @@ export function Globe({ globeConfig, data }: WorldProps) {
 
       globeRef.current
         .arcsData(validArcs)
-        .arcStartLat((d) => {
-          const lat = (d as { startLat: number }).startLat;
-          return isNaN(lat) ? 0 : lat;
-        })
-        .arcStartLng((d) => {
-          const lng = (d as { startLng: number }).startLng;
-          return isNaN(lng) ? 0 : lng;
-        })
-        .arcEndLat((d) => {
-          const lat = (d as { endLat: number }).endLat;
-          return isNaN(lat) ? 0 : lat;
-        })
-        .arcEndLng((d) => {
-          const lng = (d as { endLng: number }).endLng;
-          return isNaN(lng) ? 0 : lng;
-        })
+        .arcStartLat((d) => safeNumber((d as { startLat: number }).startLat, 0))
+        .arcStartLng((d) => safeNumber((d as { startLng: number }).startLng, 0))
+        .arcEndLat((d) => safeNumber((d as { endLat: number }).endLat, 0))
+        .arcEndLng((d) => safeNumber((d as { endLng: number }).endLng, 0))
         .arcColor((e: any) => (e as { color: string }).color)
-        .arcAltitude((e) => {
-          const alt = (e as { arcAlt: number }).arcAlt;
-          return isNaN(alt) ? 0.1 : alt;
-        })
+        .arcAltitude((e) => safeNumber((e as { arcAlt: number }).arcAlt, 0.1))
         .arcStroke((e) => {
           return [0.32, 0.28, 0.3][Math.round(Math.random() * 2)];
         })
-        .arcDashLength(defaultProps.arcLength)
-        .arcDashInitialGap((e) => {
-          const order = (e as { order: number }).order;
-          return isNaN(order) ? 1 : order;
-        })
+        .arcDashLength(safeNumber(defaultProps.arcLength, 0.9))
+        .arcDashInitialGap((e) => safeNumber((e as { order: number }).order, 1))
         .arcDashGap(15)
-        .arcDashAnimateTime((e) => defaultProps.arcTime);
+        .arcDashAnimateTime((e) => safeNumber(defaultProps.arcTime, 2000));
 
       if (globeData.length > 0) {
         globeRef.current
@@ -268,16 +268,16 @@ export function Globe({ globeConfig, data }: WorldProps) {
           .pointColor((e) => (e as { color: string }).color)
           .pointsMerge(true)
           .pointAltitude(0.0)
-          .pointRadius(2);
+          .pointRadius(safeNumber(defaultProps.pointSize, 2));
       }
 
       globeRef.current
         .ringsData([])
         .ringColor((e: any) => (t: any) => e.color(t))
-        .ringMaxRadius(defaultProps.maxRings)
+        .ringMaxRadius(safeNumber(defaultProps.maxRings, 3))
         .ringPropagationSpeed(RING_PROPAGATION_SPEED)
         .ringRepeatPeriod(
-          (defaultProps.arcTime * defaultProps.arcLength) / defaultProps.rings
+          (safeNumber(defaultProps.arcTime, 2000) * safeNumber(defaultProps.arcLength, 0.9)) / safeNumber(defaultProps.rings, 1)
         );
     } catch (err) {
       console.error("Error in startAnimation:", err);
